@@ -1,9 +1,20 @@
 <?php 
 
+    /**
+     * Mise en place 
+     *      1- 
+     * 
+     * 
+     */
+
     class PrixEssence {
         /**
          * Some other stuff
         */
+        public function __construct(
+            private $updatedAt
+        )
+        {}
         public function persist(DataTimeInterface $now, callable $persister){
             $this->updatedAt = $now;
             $persister(json_encode($this)); // $data
@@ -12,23 +23,36 @@
     interface DataTimeInterface {
         
     }
-    interface DriverInterface {
-        public function doSave($param);
+    // interface DriverInterface {
+    //     public function doSave($param);
+    // }
+    // class DriverDatabaseExecutor implements DriverInterface{
+    //     public function __construct(
+    //         private Database $db,
+    //         private $defaultSecondParam
+    //     ){}
+    //     public function doSave($param){
+    //         return $this->db->doSave($param, $this->defaultSecondParam);
+    //     }
+    // }
+
+    interface DriverJSONInterface {
+        public function JSONEncodeSave($data, $path);
     }
-    class DriverDatabaseExecutor implements DriverInterface{
+    class JSONPrixEssencePersister {
         public function __construct(
-            private Database $db,
-            private $defaultSecondParam
+            private PrixEssence $prixEssence,
+            private $path
         ){}
-        public function doSave($param){
-            return $this->db->doSave($param, $this->defaultSecondParam);
+        public function JSONEncodeSave($prixEssence, $path){
+            // $prix = json_encode($prixEssence);
+            file_put_contents($path, $prixEssence);
         }
     }
-
-    class PrixEssenceRepository { // l'adapté
+    class PrixEssenceRepository { 
         public function __construct(
             private DataTimeInterface $now,
-            private DriverInterface $driver // adapter à créer
+            private DriverJSONInterface $driver
         ){}
 
         public function save(PrixEssence $prixEssence){
@@ -37,18 +61,19 @@
             $prixEssence->persist(
                 $this->now,
                 function ($data) use ($driver){
-                    $driver->doSave($data);
+                    $driver->JSONEncodeSave($data, $this->driver->path);
                 }
             );
         }
     }
 
 
-    class Database { // Client
-        public function doSave(string $sqlQuery, PDO $connexion){
-            $stmt = $connexion->createStatement($sqlQuery);
-            $stmt->execute();
-        }
-    }
+    // class Database { 
+    //     public function doSave(string $sqlQuery, PDO $connexion){
+    //         $stmt = $connexion->createStatement($sqlQuery);
+    //         $stmt->execute();
+    //     }
+    // }
 
-    // Créer un adapter entre PrixEssenceRepository et Database
+    $prixEssence = new PrixEssence(date('d m Y'));
+    $prixEssenceRepository = new PrixEssenceRepository(date('d m Y'), $JSONPRixEssencePersister = new DriverJSONInterface());
